@@ -1,0 +1,42 @@
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+*.env
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and outputs
+*.log
+logs/
+outputs/
+checkpoints/
+
+
+
+# Model weights
+models/
+*.ckpt
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+
+build/
+
+
+# Environment & secrets
+.env
+*.key
+*.pem
