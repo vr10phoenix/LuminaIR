@@ -24,3 +24,6 @@ SwinIR uses a Sub-Pixel Convolution (often called PixelShuffle). It generates ma
 * Step 2: The Residual Swin Transformer Block (RSTB). We will stack those window layers together with residual connections to create deep feature extractors.
 
 * Step 3: The Final SwinIR Wrapper. We will combine the feature extractors with the PixelShuffle upsampler to take our 1-channel clean IR image and output a high-resolution 1-channel sharp IR image.
+
+## Result : 
+intital Restormer aans SwinIR architecture connection established with flawless data flow between them
