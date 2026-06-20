@@ -55,9 +55,7 @@ def get_dataloaders(patches_dir, batch_size=16, train_split=0.85):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, drop_last=True)
     
-    print(f"Total valid patches loaded: {len(dataset)}")
-    print(f"Training Set: {train_size} patches")
-    print(f"Validation Set: {val_size} patches")
-    print(f"Batches per Epoch: {len(train_loader)} (Batch Size: {batch_size})")
-    
     return train_loader, val_loader
+
+patches_directory = "training_patches"
+train_loader, val_loader = get_dataloaders(patches_directory, batch_size=16)
