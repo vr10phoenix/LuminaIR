@@ -1,4 +1,4 @@
-# 🔥 Semantic-Guided Thermal-to-RGB GAN
+# Semantic-Guided Thermal-to-RGB GAN
 
 An advanced Generative Adversarial Network (GAN) pipeline designed to translate 1-channel thermal/IR imagery into fully realized 3-channel RGB images. 
 
@@ -6,7 +6,7 @@ Unlike standard image-to-image translation models, this architecture utilizes a 
 
 ---
 
-## 🚀 Overview
+## Overview
 
 Translating thermal inputs to RGB often results in hallucinated textures or loss of structural semantics. This repository solves that by combining **Pix2PixHD** principles with modern vision transformers. 
 
@@ -18,7 +18,7 @@ Translating thermal inputs to RGB often results in hallucinated textures or loss
 
 ---
 
-## 🧠 Architecture
+## Architecture
 
 | Component | Class Name | Description |
 | :--- | :--- | :--- |
@@ -31,7 +31,7 @@ Translating thermal inputs to RGB often results in hallucinated textures or loss
 
 ---
 
-## 📦 Prerequisites
+## Prerequisites
 
 Ensure you have a CUDA-capable GPU. The pipeline relies heavily on the Hugging Face ecosystem and Ultralytics.
 
@@ -66,6 +66,6 @@ The outputs will appear in your root directory as:
 - multiscale_critic_epoch_X.pth
 
 ## Generated output 
-![output](assets/result.png)
+![output](https://github.com/vr10phoenix/LuminaIR/blob/main/assets/result.png)
 
 Initial Prototype pipeline established and testing , moving towards refining the approach and fine tuning the pipeline with better loss functions and taking out errors.
