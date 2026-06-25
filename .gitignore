@@ -40,3 +40,11 @@ build/
 .env
 *.key
 *.pem
+thermal_visualization.png
+swinir_thermal_v1.pth
+real_denoising.pth
+inference_result.png
+final_superres_thermal.tif
+final_superres_thermal.npy
+patches/
+processed_data/
