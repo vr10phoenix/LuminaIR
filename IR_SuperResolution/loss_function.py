@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class CharbonnierLoss(nn.Module):
-    """loss for image restoration"""
+    """Loss for image restoration"""
     def __init__(self, eps=1e-3):
         super(CharbonnierLoss, self).__init__()
         self.eps = eps
@@ -25,7 +25,6 @@ class EdgeLoss(nn.Module):
         self.loss_fn = CharbonnierLoss()
 
     def forward(self, x, y):
-        # Apply edge extraction filter
         x_edges = F.conv2d(x, self.kernel, padding=1)
         y_edges = F.conv2d(y, self.kernel, padding=1)
         return self.loss_fn(x_edges, y_edges)
@@ -41,5 +40,4 @@ class SuperResolutionLoss(nn.Module):
     def forward(self, pred, target):
         loss_charb = self.charbonnier(pred, target)
         loss_edge = self.edge(pred, target)
-
         return loss_charb + (self.edge_weight * loss_edge)

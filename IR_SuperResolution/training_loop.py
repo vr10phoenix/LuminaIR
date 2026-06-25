@@ -1,75 +1,98 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import time
-from data_loader import train_loader
+import wget
+from data_loader import train_loader, val_loader
 from restormer import pre_restormer
 from swinir import SwinIR_Thermal
 from loss_function import SuperResolutionLoss
 
+torch.backends.cudnn.benchmark = True
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Using device: {device}")
+if device == 'cuda':
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+    print(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
 
-weights_url = "https://github.com/swz30/Restormer/releases/download/v1.0/real_denoising.pth"
 weights_path = "real_denoising.pth"
-
 if not os.path.exists(weights_path):
-    print("Downloading Official Pre-trained Restormer Weights (SIDD)...")
-    !wget {weights_url} -O {weights_path}
+    print("Downloading pre-trained Restormer weights...")
+    wget.download("https://github.com/swz30/Restormer/releases/download/v1.0/real_denoising.pth", weights_path)
 else:
-    print("Weights already downloaded!")
+    print("Weights already downloaded.")
 
-# calling the models
-restormer = pre_restormer(pretrained_weights_path=weights_path, device="cuda")
+restormer = pre_restormer(pretrained_weights_path=weights_path, device=device)
 restormer.to(device)
 restormer.eval()
+for p in restormer.parameters():
+    p.requires_grad = False
 
-# freeze upstream parameters (to save memory)
-for param in restormer.parameters():
-    param.requires_grad = False
-
-swinir = SwinIR_Thermal(upscale=2).to(device)
+swinir = SwinIR_Thermal(upscale=2, dim=32, depths=[4, 4, 4, 4], num_heads=8).to(device)
 swinir.train()
 
-# optimizer
 optimizer = optim.AdamW(swinir.parameters(), lr=2e-4, betas=(0.9, 0.999), weight_decay=1e-4)
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50, eta_min=1e-6)
 criterion = SuperResolutionLoss(edge_weight=0.5).to(device)
 
-epochs = 50
-accumulation_steps = 4 
+epochs = 30
+accum_steps = 4
+scaler = torch.amp.GradScaler('cuda')
 
-print("========== STARTING FOOTPRINT-OPTIMIZED RESTORATION TRAINING ============")
+print("========== TRAINING STARTED (TRAIN/VAL SPLIT ENABLED) ==========")
 
 for epoch in range(epochs):
+    # --- Training Phase ---
     epoch_loss = 0.0
-    start_time = time.time()
+    start = time.time()
     optimizer.zero_grad()
-
-    for i, (tir_200m, tir_100m) in enumerate(train_loader):
-        tir_200m = tir_200m.to(device)
-        tir_100m = tir_100m.to(device)
+    
+    total_batches = len(train_loader)
+    for i, (lr, hr) in enumerate(train_loader):
+        lr = lr.to(device)
+        hr = hr.to(device)
 
         with torch.no_grad():
-            clean_lr_thermal = restormer(tir_200m)
+            clean_lr = restormer(lr)
 
-        sr_thermal = swinir(clean_lr_thermal)
+        with torch.amp.autocast('cuda'):
+            sr = swinir(clean_lr)
+            loss = criterion(sr, hr) / accum_steps
 
-        # Scale loss relative to gradient accumulation intervals
-        loss = criterion(sr_thermal, tir_100m) / accumulation_steps
-        loss.backward()
+        scaler.scale(loss).backward()
 
-        if (i + 1) % accumulation_steps == 0 or (i + 1) == len(train_loader):
+        if (i+1) % accum_steps == 0 or (i+1) == total_batches:
+            scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(swinir.parameters(), max_norm=1.0)
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             optimizer.zero_grad()
 
-        epoch_loss += loss.item() * accumulation_steps
+        epoch_loss += loss.item() * accum_steps
+        
+        if (i+1) % 10 == 0:
+            print(f"  Batch {i+1}/{total_batches} | Loss: {loss.item() * accum_steps:.6f}")
+
+    avg_train_loss = epoch_loss / total_batches
+
+    # --- Validation Phase (Unseen Data) ---
+    val_loss = 0.0
+    with torch.no_grad():
+        for lr, hr in val_loader:
+            lr = lr.to(device)
+            hr = hr.to(device)
+            clean_lr = restormer(lr)
+            sr = swinir(clean_lr)
+            val_loss += criterion(sr, hr).item()
+    
+    avg_val_loss = val_loss / len(val_loader)
 
     scheduler.step()
-    avg_loss = epoch_loss / len(train_loader)
-    print(f"Epoch [{epoch+1:02d}/{epochs}] | Compound Loss: {avg_loss:.6f} | Sec/Epoch: {time.time() - start_time:.1f}s")
+    
+    print(f"Epoch [{epoch+1:02d}/{epochs}] | Train Loss: {avg_train_loss:.6f} | Val Loss: {avg_val_loss:.6f} | Time: {time.time()-start:.1f}s")
 
-# saving the weights file
 torch.save(swinir.state_dict(), 'swinir_thermal_v1.pth')
-print("Trained parameters cleanly written to 'swinir_thermal_v1.pth'.")
+print("Model saved as swinir_thermal_v1.pth")
