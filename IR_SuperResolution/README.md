@@ -32,6 +32,9 @@ Epoch [49/50] | Compound Loss: 1394.368469 | Sec/Epoch: 50.0s
 Epoch [50/50] | Compound Loss: 1392.799917 | Sec/Epoch: 50.0s
  Trained parameters cleanly written to 'swinir_thermal_v1.pth'
 ```
+#### Obtained Image
+![result](https://github.com/vr10phoenix/LuminaIR/blob/main/assets/IR_super_resolution.png)
 
 ### summary
-current focus it to make a solid Super-resolver before movig to coloration.
+- current focus it to make a solid Super-resolver before movig to coloration.
+- upgrade the flaws and refine the architecture.
