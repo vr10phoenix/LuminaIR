@@ -382,9 +382,9 @@ During initialization
 
 Consequently,
 
-[
+\[
 \frac{\partial \mathcal{L}}{\partial \theta_{Restormer}} = 0
-]
+\]
 
 throughout optimization.
 
@@ -434,21 +434,21 @@ To address these complementary objectives, the proposed loss combines a robust p
 
 The total optimization objective is defined as
 
-[
+\[
 \mathcal{L}
-===========
-
-\mathcal{L}*{Charbonnier}
+=
+\mathcal{L}_{Charbonnier}
 +
-\lambda
-\mathcal{L}*{Edge}
-]
+\lambda \cdot \mathcal{L}_{Edge}
+\]
+
 
 where
 
-[
+
+\[
 \lambda = 0.2
-]
+\]
 
 controls the contribution of edge preservation.
 
@@ -458,12 +458,12 @@ controls the contribution of edge preservation.
 
 Instead of Mean Squared Error, the framework employs the Charbonnier loss
 
-[
+\[
 \mathcal{L}_{Char}
 ==================
 
 \sqrt{(I_p-I_t)^2+\epsilon}
-]
+\]
 
 The Charbonnier formulation behaves similarly to an L1 loss while remaining differentiable everywhere, resulting in improved numerical stability and reduced sensitivity to outliers.
 
@@ -535,11 +535,11 @@ ACCUM_STEPS = 4
 
 the effective batch size becomes
 
-[
-Batch_{effective}
+\[
+\Batch_{effective}
 =================
 
-Batch_{physical}
+\Batch_{physical}
 \times
 4
 ]
@@ -554,9 +554,9 @@ Before every optimizer update,
 
 gradient norms are clipped to
 
-[
-|g|_2 \le 1
-]
+\[
+\|g|_2 \le 1
+\]
 
 to suppress exploding gradients that occasionally arise during transformer training.
 
@@ -570,20 +570,20 @@ Optimization employs the AdamW optimizer together with cosine annealing.
 
 The learning rate gradually decreases following
 
-[
+\[
 \eta_t
 ======
 
 \eta_{min}
 +
 \frac{1}{2}
-(\eta_{max}-\eta_{min})
+\(\eta_{max}-\eta_{min})
 \left(
 1+
 \cos
 \frac{\pi t}{T}
 \right)
-]
+\]
 
 This scheduling strategy provides smoother convergence than abrupt step-based decay and is well suited to transformer optimization.
 
