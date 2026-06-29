@@ -161,21 +161,24 @@ allowing partial parameter matching while avoiding incompatibilities introduced 
 
 #### Stage 3
 
-Replace the RGB embedding layer with a newly constructed single-channel convolution.
+Replace the RGB embedding layer with a newly constructed single‑channel convolution.
 
-The new convolutional kernel is initialized by averaging the original RGB filters
+The new convolutional kernel is initialized by averaging the original RGB filters:
 
-[
-W_{TIR}=\frac{W_R+W_G+W_B}{3}
-]
 
-thereby preserving the learned edge detectors, low-frequency filters, and structural priors embedded within the original convolutional kernels.
+
+\[
+W_{TIR} = \frac{W_R + W_G + W_B}{3}
+\]
+
+
+
+This preserves the learned edge detectors, low‑frequency filters, and structural priors embedded within the original convolutional kernels.
 
 Only the first convolutional layer is modified.
 
-Every remaining parameter—including transformer attention layers, feed-forward networks, normalization layers, and reconstruction head—is retained from the pre-trained checkpoint.
+Every remaining parameter—including transformer attention layers, feed‑forward networks, normalization layers, and the reconstruction head—is retained from the pre‑trained checkpoint.
 
----
 
 #### Weight Initialization Pipeline
 
@@ -212,21 +215,38 @@ The network predicts a residual correction rather than reconstructing the therma
 
 Let
 
-[I_{LR}]
 
-represent the input image and
 
-[F(I_{LR})]
+\[
+I_{LR}
+\]
+
+
+
+represent the input image, and
+
+
+
+\[
+F(I_{LR})
+\]
+
+
 
 denote the learned restoration function.
 
-The final prediction is
+The final prediction is:
 
-[I_{out}=I_{LR}+F(I_{LR})]
 
-This residual formulation encourages the network to learn only missing high-frequency information while preserving the original thermal intensity distribution.
 
----
+\[
+I_{out} = I_{LR} + F(I_{LR})
+\]
+
+
+
+This residual formulation encourages the network to learn only missing high‑frequency information while preserving the original thermal intensity distribution.
+
 
 # Design Considerations
 
@@ -371,28 +391,30 @@ This configuration minimizes data-loading overhead while maintaining reproducibi
 
 ### Transfer Learning Strategy
 
-The framework assumes that Restormer has already been pre-trained on large-scale image restoration tasks.
+The framework assumes that **Restormer** has already been pre‑trained on large‑scale image restoration tasks.
 
-During initialization
+During initialization:
 
-1. the pretrained checkpoint is loaded,
-2. parameters are transferred to the restoration network,
-3. the network is switched to evaluation mode, and
-4. every parameter is frozen.
+1. The pretrained checkpoint is loaded  
+2. Parameters are transferred to the restoration network  
+3. The network is switched to evaluation mode  
+4. Every parameter is frozen  
 
-Consequently,
+Consequently:
+
+
 
 \[
 \frac{\partial \mathcal{L}}{\partial \theta_{Restormer}} = 0
 \]
 
+
+
 throughout optimization.
 
-Only SwinIR participates in gradient updates.
-
+Only **SwinIR** participates in gradient updates.  
 This considerably reduces computational cost while preventing catastrophic forgetting of previously learned restoration representations.
 
----
 
 ### SwinIR Optimization
 
@@ -428,11 +450,13 @@ The optimization objective is therefore limited exclusively to learning spatial 
 
 ### Loss Function Design
 
-Accurate reconstruction of thermal imagery requires preservation of both radiometric fidelity and structural boundaries.
+Accurate reconstruction of thermal imagery requires preservation of both **radiometric fidelity** and **structural boundaries**.
 
-To address these complementary objectives, the proposed loss combines a robust pixel reconstruction term with an edge-preservation constraint.
+To address these complementary objectives, the proposed loss combines a robust pixel reconstruction term with an edge‑preservation constraint.
 
-The total optimization objective is defined as
+The total optimization objective is defined as:
+
+
 
 \[
 \mathcal{L}
@@ -443,31 +467,50 @@ The total optimization objective is defined as
 \]
 
 
+
 where
+
 
 
 \[
 \lambda = 0.2
 \]
 
+
+
 controls the contribution of edge preservation.
 
 ---
 
+##### Explanation
+- **ℒ<sub>Charbonnier</sub>** → Robust reconstruction loss that behaves like L1 but remains differentiable everywhere, improving stability.  
+- **ℒ<sub>Edge</sub>** → Edge‑aware loss that enforces sharper boundaries and structural consistency.  
+- **λ = 0.2** → Balancing coefficient that weights the edge term relative to pixel reconstruction.
+
+
 #### Charbonnier Reconstruction Loss
 
-Instead of Mean Squared Error, the framework employs the Charbonnier loss
+Instead of Mean Squared Error, the framework employs the **Charbonnier loss**:
+
+
 
 \[
 \mathcal{L}_{Char}
-==================
-
-\sqrt{(I_p-I_t)^2+\epsilon}
+=
+\sqrt{(I_p - I_t)^2 + \epsilon}
 \]
 
-The Charbonnier formulation behaves similarly to an L1 loss while remaining differentiable everywhere, resulting in improved numerical stability and reduced sensitivity to outliers.
+
 
 ---
+
+##### Explanation
+- **\(I_p\)** → Predicted image (output of the model)  
+- **\(I_t\)** → Target image (ground truth)  
+- **\(\epsilon\)** → Small constant to ensure differentiability and numerical stability  
+- The Charbonnier formulation behaves similarly to an **L1 loss** while remaining differentiable everywhere.  
+- This results in **improved stability** during training and reduced sensitivity to outliers compared to MSE.
+
 
 #### Edge Preservation Loss
 
@@ -533,16 +576,15 @@ With
 ACCUM_STEPS = 4
 ```
 
-the effective batch size becomes
+the effective batch size becomes:
 
 \[
-\Batch_{effective}
-=================
-
-\Batch_{physical}
-\times
-4
-]
+\text{Batch}_{effective}
+=
+\text{Batch}_{physical}
+\times 4
+\]
+---
 
 allowing stable optimization without increasing memory requirements.
 
@@ -555,8 +597,12 @@ Before every optimizer update,
 gradient norms are clipped to
 
 \[
-\|g|_2 \le 1
+\| g \|_{2} \leq 1
 \]
+
+
+
+---
 
 to suppress exploding gradients that occasionally arise during transformer training.
 
@@ -566,28 +612,36 @@ Gradient clipping improves convergence stability, particularly during the early 
 
 #### Learning Rate Scheduling
 
-Optimization employs the AdamW optimizer together with cosine annealing.
+Optimization employs the **AdamW** optimizer together with **cosine annealing**.
 
-The learning rate gradually decreases following
+The learning rate gradually decreases following:
+
+
 
 \[
 \eta_t
-======
-
-\eta_{min}
+=
+\eta_{\min}
 +
-\frac{1}{2}
-\(\eta_{max}-\eta_{min})
+\frac{1}{2} \, (\eta_{\max} - \eta_{\min})
 \left(
-1+
-\cos
-\frac{\pi t}{T}
+1 + \cos\left(\frac{\pi t}{T}\right)
 \right)
 \]
 
-This scheduling strategy provides smoother convergence than abrupt step-based decay and is well suited to transformer optimization.
+
 
 ---
+
+##### Explanation
+- **η<sub>t</sub>** → learning rate at step *t*  
+- **η<sub>max</sub>** → initial (maximum) learning rate  
+- **η<sub>min</sub>** → minimum learning rate (final floor)  
+- **T** → total number of steps (or epochs) in the schedule  
+- The cosine term smoothly decreases the learning rate from **η<sub>max</sub>** to **η<sub>min</sub>** over the training horizon.  
+
+This scheduling strategy provides **smoother convergence** than abrupt step‑based decay and is well suited to transformer optimization.
+
 
 
 #### Checkpoint Management
@@ -658,7 +712,7 @@ Baseline SSIM      : 0.9971
 ```
 
 Output after passing through swinIR via Restormer
-![SwinIR_Output] (https://github.com/vr10phoenix/LuminaIR/blob/main/assets/tir_swin_result.png)
+![SwinIR Output](https://github.com/vr10phoenix/LuminaIR/blob/main/assets/tir_swin_result.png)
 
 ```
               RESULTS
